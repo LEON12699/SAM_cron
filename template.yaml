@@ -1,4 +1,4 @@
-AWSTemplateFormatVersion: '2010-09-09'
+AWSTemplateFormatVersion: "2010-09-09"
 Transform: AWS::Serverless-2016-10-31
 Description: >
   crypto
@@ -7,103 +7,53 @@ Description: >
 
 Globals:
   Function:
-    Timeout: 3
+    Timeout: 300
 
 Resources:
-  EfsLambdaVpc:
-    Type: AWS::EC2::VPC
+  AppBucket:
+    Type: "AWS::S3::Bucket"
     Properties:
-      CidrBlock: "10.0.0.0/16"
-  EfsLambdaSecurityGroup:
-    Type: AWS::EC2::SecurityGroup
+      AccessControl: Private
+  AppBucketPolicy:
+    Type: AWS::S3::BucketPolicy
     Properties:
-      GroupDescription: "EFS + Lambda on SAM Security Group"
-      VpcId: !Ref EfsLambdaVpc
-      SecurityGroupEgress:
-        - CidrIp: "0.0.0.0/0"
-          FromPort: 0
-          ToPort: 65535
-          IpProtocol: tcp
-      SecurityGroupIngress:
-        - CidrIp: "0.0.0.0/0"
-          FromPort: 0
-          ToPort: 65535
-          IpProtocol: tcp
-  EfsLambdaSubnetA:
-    Type: AWS::EC2::Subnet
-    Properties:
-      VpcId: !Ref EfsLambdaVpc
-      AvailabilityZone: !Select [ 0, !GetAZs '' ]
-      MapPublicIpOnLaunch: false
-      CidrBlock: "10.0.0.0/24"
-  EfsLambdaSubnetB:
-    Type: AWS::EC2::Subnet
-    Properties:
-      VpcId: !Ref EfsLambdaVpc
-      AvailabilityZone: !Select [ 1, !GetAZs '' ]
-      MapPublicIpOnLaunch: false
-      CidrBlock: "10.0.1.0/24"
-  EfsFileSystem:
-    Type: AWS::EFS::FileSystem
-  MountTargetA:
-    Type: AWS::EFS::MountTarget
-    Properties:
-      FileSystemId: !Ref EfsFileSystem
-      SubnetId: !Ref EfsLambdaSubnetA
-      SecurityGroups:
-        - !Ref EfsLambdaSecurityGroup
-  MountTargetB:
-    Type: AWS::EFS::MountTarget
-    Properties:
-      FileSystemId: !Ref EfsFileSystem
-      SubnetId: !Ref EfsLambdaSubnetB
-      SecurityGroups:
-        - !Ref EfsLambdaSecurityGroup
-  AccessPoint:
-    Type: AWS::EFS::AccessPoint
-    Properties:
-      FileSystemId: !Ref EfsFileSystem
-      PosixUser:
-        Gid: "1000"
-        Uid: "1000"
-      RootDirectory:
-        Path: "/lambda"
-        CreationInfo:
-          OwnerGid: "1000"
-          OwnerUid: "1000"
-          Permissions: "755"
-  HelloEfsFunction:
-    Type: AWS::Serverless::Function
-    DependsOn:
-      - MountTargetA
-      - MountTargetB
+      Bucket: !Ref AppBucket
+      PolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Action:
+              - "s3:GetObject"
+              - "s3:PutObject"
+            Effect: Allow
+            Resource: !Join
+              - ""
+              - - "arn:aws:s3:::"
+                - !Ref AppBucket
+                - /*
+            Principal: "*"
+
+  GetCrypto:
+    Type: AWS::Serverless::Function # More info about Function Resource: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#awsserverlessfunction
     Properties:
       CodeUri: get_crypto/
       Handler: app.lambda_handler
       Runtime: python3.8
-      Architectures:
-        - x86_64
       Policies:
-        - EFSWriteAccessPolicy:
-            FileSystem: !Ref EfsFileSystem
-            AccessPoint: !Ref AccessPoint
-      VpcConfig:
-        SecurityGroupIds:
-          - !Ref EfsLambdaSecurityGroup
-        SubnetIds:
-          - !Ref EfsLambdaSubnetA
-          - !Ref EfsLambdaSubnetB
-      FileSystemConfigs:
-        - Arn: !GetAtt AccessPoint.Arn
-          LocalMountPath: /mnt/lambda
+        - S3WritePolicy:
+            BucketName: !Ref AppBucket
+      Environment:
+        Variables:
+          S3_BUCKET: !Ref AppBucket
+          S3_STORAGE_PATH: documents/
+          S3_OBJECT_PREFIX: cryto_prices_
+          S3_OBJECT_SUFFIX: .json
       Events:
-        HelloWorld:
-          Type: Api
-          Properties:
-            Path: /hello
-            Method: get
+        OncePerDay:
+          Type: Schedule # More info about the Schedule Event Source: https://github.com/aws/serverless-application-model/blob/master/docs/internals/generated_resources.rst#schedule
+          Properties:sops
+            Schedule: cron(0 0 * * ? *) # every day at 0:00 UTC
 
-Outputs:
-  HelloEfsApi:
-    Description: "API Gateway endpoint URL for Prod stage for Hello EFS function"
-    Value: !Sub "https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/hello/"
+#Outputs:
+#  GetCrypto:
+#    Description: "API Gateway endpoint URL for Prod stage for Hello EFS function"
+#    Value: !Sub "https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/hello/"

@@ -2,56 +2,82 @@ import json
 import requests
 import os
 from pathlib import Path
+import boto3
+import datetime
+import sops
 
-# You can reference EFS files by including your local mount path, and then
-# treat them like any other file. Local invokes may not work with this, however,
-# as the file/folders may not be present in the container.
 API_URL = "https://pro-api.coinmarketcap.com/v1"
 ENDPOINT = "/cryptocurrency/listings/latest"
 LIMIT = 5000  # MAX LIMIT API CAN EXECUTE
-API_KEY = os.getenv("MY_API_KEY")
-#FILE = Path("/mnt/lambda/file")
+
+
+def get_sops_secrets(path):
+    pathtype = sops.detect_filetype(path)
+    tree = sops.load_file_into_tree(path, pathtype)
+    sops_key, tree = sops.get_key(tree)
+    return sops.walk_and_decrypt(tree, sops_key)
+
 
 
 def lambda_handler(event, context):
-    URL = f'{API_URL}{ENDPOINT}?limit={LIMIT}'
+
+    API_KEY = get_sops_secrets('secret.json').get('API_TOKEN')
+
+
+    S3_BUCKET = os.getenv('S3_BUCKET', 'appCrypto')
+    S3_STORAGE_PATH = os.getenv('S3_STORAGE_PATH', 'documents/')
+    S3_OBJECT_PREFIX =os.getenv('S3_OBJECT_PREFIX', 'cryto_prices_')
+    S3_OBJECT_SUFFIX= os.getenv('S3_OBJECT_SUFFIX', '.json')
     
+    URL = f'{API_URL}{ENDPOINT}?limit={LIMIT}'
     headers = {
         'X-CMC_PRO_API_KEY': API_KEY
     }
     
-
+    
+    data_formatted= []
     print("searching prices...")
     try:
         response = requests.request("GET", URL, headers=headers)
-        data = response.json();
+        crypto_data = response.json();
+
+        data_formatted += [
+            {
+                'name': crypto.get('name'),
+                'symbol': crypto.get('symbol'),
+                'price': crypto.get('quote').get('USD').get('price'),
+                "volume_24h": crypto.get('quote').get('USD').get('volume_24h'),
+                "volume_change_24h": crypto.get('quote').get('USD').get('volume_change_24h'),
+                "percent_change_24h":crypto.get('quote').get('USD').get('percent_change_24h'),
+                "percent_change_7d":crypto.get('quote').get('USD').get('percent_change_7d') ,
+                
+            }
+            for crypto in crypto_data.get('data', [])
+        ]
         print("End search .. :)")
-        #print(data['data'])
-    except requests.exceptions.RequestException as e:  # This is the correct syntax
+        
+    except requests.exceptions.RequestException as e: 
         print("something has gone wrong")
         raise SystemExit(e)
-    wrote_file = False
-    contents = None
+
+    file_name = S3_STORAGE_PATH + S3_OBJECT_PREFIX \
+        + datetime.datetime.utcnow().strftime('%Y-%m%d-%H%M-%S') \
+        + S3_OBJECT_SUFFIX
+
+    print(f'Uploading {file_name} to {S3_BUCKET} ...')
     
-    print(data['data'])
-    # The files in EFS are not only persistent across executions, but if multiple
-    # Lambda functions are mounted to the same EFS file system, you can read and
-    # write files from either function.
-    if not FILE.is_file():
-        with open(FILE, 'w') as f:
-            contents = "Hello, EFS!\n"
-            f.write(contents)
-            wrote_file = True
-    else:
-        with open(FILE, 'r') as f:
-            contents = f.read()
+    print(f'{data_formatted=}')
+    
+    s3 = boto3.resource('s3')
+    s3.Object(
+        S3_BUCKET,
+        file_name
+    ).put(Body=json.dumps(data_formatted))
+
+    print('Upload successful.')
+
     return {
         "statusCode": 200,
-        "body": json.dumps({
-            "file_contents": contents,
-            "created_file": wrote_file
-        }),
+        "S3_PATH": f's3://{S3_BUCKET}/{file_name}'
     }
 
-
-lambda_handler({},{})

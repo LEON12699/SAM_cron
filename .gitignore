@@ -266,7 +266,7 @@ ENV/
 env.bak/
 venv.bak/
 pythonenv*
-
+test.json
 # Spyder project settings
 .spyderproject
 .spyproject
