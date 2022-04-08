@@ -7,6 +7,8 @@ import json
 from datetime import datetime
 
 # If modifying these scopes, delete the file token.json.
+# TODO put variables on template yaml
+
 SCOPES = ['https://www.googleapis.com/auth/spreadsheets']
 
 # The ID and range of a sample spreadsheet.
@@ -80,6 +82,7 @@ def lambda_handler(event, context):
     data.insert(0, HEADERS)
 
     # TODO improve styles of sheet
+    
     body = {
     'values': data
     }

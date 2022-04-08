@@ -1,62 +1,34 @@
 {
-  "body": "{\"message\": \"hello world\"}",
-  "resource": "/{proxy+}",
-  "path": "/path/to/resource",
-  "httpMethod": "POST",
-  "isBase64Encoded": false,
-  "queryStringParameters": {
-    "foo": "bar"
-  },
-  "pathParameters": {
-    "proxy": "/path/to/resource"
-  },
-  "stageVariables": {
-    "baz": "qux"
-  },
-  "headers": {
-    "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8",
-    "Accept-Encoding": "gzip, deflate, sdch",
-    "Accept-Language": "en-US,en;q=0.8",
-    "Cache-Control": "max-age=0",
-    "CloudFront-Forwarded-Proto": "https",
-    "CloudFront-Is-Desktop-Viewer": "true",
-    "CloudFront-Is-Mobile-Viewer": "false",
-    "CloudFront-Is-SmartTV-Viewer": "false",
-    "CloudFront-Is-Tablet-Viewer": "false",
-    "CloudFront-Viewer-Country": "US",
-    "Host": "1234567890.execute-api.us-east-1.amazonaws.com",
-    "Upgrade-Insecure-Requests": "1",
-    "User-Agent": "Custom User Agent String",
-    "Via": "1.1 08f323deadbeefa7af34d5feb414ce27.cloudfront.net (CloudFront)",
-    "X-Amz-Cf-Id": "cDehVQoZnx43VYQb9j2-nvCh-9z396Uhbp027Y2JvkCPNLmGJHqlaA==",
-    "X-Forwarded-For": "127.0.0.1, 127.0.0.2",
-    "X-Forwarded-Port": "443",
-    "X-Forwarded-Proto": "https"
-  },
-  "requestContext": {
-    "accountId": "123456789012",
-    "resourceId": "123456",
-    "stage": "prod",
-    "requestId": "c6af9ac6-7b61-11e6-9a41-93e8deadbeef",
-    "requestTime": "09/Apr/2015:12:34:56 +0000",
-    "requestTimeEpoch": 1428582896000,
-    "identity": {
-      "cognitoIdentityPoolId": null,
-      "accountId": null,
-      "cognitoIdentityId": null,
-      "caller": null,
-      "accessKey": null,
-      "sourceIp": "127.0.0.1",
-      "cognitoAuthenticationType": null,
-      "cognitoAuthenticationProvider": null,
-      "userArn": null,
-      "userAgent": "Custom User Agent String",
-      "user": null
-    },
-    "path": "/prod/path/to/resource",
-    "resourcePath": "/{proxy+}",
-    "httpMethod": "POST",
-    "apiId": "1234567890",
-    "protocol": "HTTP/1.1"
-  }
+  "Records": [
+    {
+      "eventVersion": "2.1",
+      "eventSource": "aws:s3",
+      "awsRegion": "us-west-1",
+      "eventTime": "2022-04-07T01:38:29.102Z",
+      "eventName": "ObjectCreated:Put",
+      "userIdentity": {
+        "principalId": "AWS:AROAQCCFBIINGBSPX5Y7C:cryptoApp-GetCrypto-Xi8tFGLSJ19f"
+      },
+      "requestParameters": { "sourceIPAddress": "184.169.162.253" },
+      "responseElements": {
+        "x-amz-request-id": "HBQGDHY4QF3FZBCG",
+        "x-amz-id-2": "evWQDS0CRfyETW9OQqXwmXgUIAkfFDUIxCuTaKfHTCMyFvKrIv4TKtIuPV2N0skhnzLDXIi+mEZoXHjegNbkD1ZplsYCHToE"
+      },
+      "s3": {
+        "s3SchemaVersion": "1.0",
+        "configurationId": "4d76132b-1e28-4cbc-a56e-3b3d34db74c2",
+        "bucket": {
+          "name": "cryptoapp-appbucket-c7e1xxz0rfpl",
+          "ownerIdentity": { "principalId": "AMT4O8GZ3ZEPX" },
+          "arn": "arn:aws:s3:::cryptoapp-appbucket-c7e1xxz0rfpl"
+        },
+        "object": {
+          "key": "documents/cryto_prices_2022-0406-0000-38.json",
+          "size": 1002649,
+          "eTag": "3cc9881280d76348ab9bba5c8d7ba38d",
+          "sequencer": "00624E4094F3B2F3B2"
+        }
+      }
+    }
+  ]
 }

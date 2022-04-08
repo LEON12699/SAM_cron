@@ -50,9 +50,23 @@ Resources:
       Events:
         OncePerDay:
           Type: Schedule # More info about the Schedule Event Source: https://github.com/aws/serverless-application-model/blob/master/docs/internals/generated_resources.rst#schedule
-          Properties:sops
+          Properties:
             Schedule: cron(0 0 * * ? *) # every day at 0:00 UTC
 
+  GetSheet:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: get_sheet/
+      Handler: app.lambda_handler
+      Runtime: python3.8
+      Timeout: 100
+      Policies: AWSLambdaExecute
+      Events:
+        GetSheetEvent:
+          Type: S3
+          Properties:
+            Bucket: !Ref AppBucket
+            Events: s3:ObjectCreated:*
 #Outputs:
 #  GetCrypto:
 #    Description: "API Gateway endpoint URL for Prod stage for Hello EFS function"
