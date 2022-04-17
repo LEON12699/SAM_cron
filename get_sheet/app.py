@@ -8,7 +8,6 @@ from datetime import datetime
 
 # If modifying these scopes, delete the file token.json.
 # TODO put variables on template yaml
-
 SCOPES = ['https://www.googleapis.com/auth/spreadsheets']
 
 # The ID and range of a sample spreadsheet.
@@ -92,6 +91,7 @@ def lambda_handler(event, context):
     valueInputOption="RAW", body=body).execute()
     
     
+    s3.Object(S3_BUCKET, S3_URL_OBJECT).delete()
 
     return {
         "statusCode": 200,
